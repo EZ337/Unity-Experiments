@@ -22,41 +22,32 @@ public class PlayerMovement : MonoBehaviour
 
     private void Start()
     {
+        // Calculate time to reach and leave maxSpeed
         moveAcceleration = maxSpeed / accelTime;
         moveDeceleration = maxSpeed / decelTime;
     }
 
     private void FixedUpdate()
     {
-        HandleMovement();
-        //Debug.Log(rb.velocity);
-    }
-
-    private void HandleMovement()
-    {
-        if (moveDir.x != 0)
-        {
-            Accelerate(moveDir);
-        }
-        else if (rb.velocity.x != 0.0f && isMoving)
-        {
-            Decelerate(-(rb.velocity));
-        }
+        // Process HorizontalMovement
+        HorizontalMovement();
     }
 
     /// <summary>
-    /// Decelerate the movement.
+    /// Handles the horizontal movement of the player
     /// </summary>
-    /// <param name="direction">The opposite direction of the x velocity</param>
-    private void Decelerate(Vector2 direction)
+    private void HorizontalMovement()
     {
-        if (Mathf.Abs(rb.velocity.x) > 0.01f)
-            rb.AddForce(new Vector2(moveDeceleration * direction.x, 0.0f), ForceMode2D.Force);
-        else
+        if (moveDir.x != 0)
         {
-            rb.velocity = new Vector2(0, rb.velocity.y);
-            isMoving = false;
+            Accelerate(moveDir); // Accelerate in the input direction
+            FlipSprite(); // Flip the sprite because we are moving
         }
+        else if (Mathf.Abs(rb.velocity.x) > 0.0f)
+        {
+            Decelerate(-(rb.velocity)); // No input so 
+        }
+
     }
 
     /// <summary>
@@ -65,22 +56,50 @@ public class PlayerMovement : MonoBehaviour
     /// <param name="direction">Direction to accelerate in</param>
     private void Accelerate(Vector2 direction)
     {
-        if (Mathf.Abs(rb.velocity.x) < maxSpeed)
+        if (Mathf.Abs(rb.velocity.x) < maxSpeed) // Constantly add force if we haven't reached max speed
             rb.AddForce(new Vector2(direction.x * moveAcceleration, 0.0f), ForceMode2D.Force);
-        else
+        else // If we are >= maxSpeed, clamp velocity to maxSpeed
             rb.velocity = new(maxSpeed * Mathf.Sign(direction.x), rb.velocity.y);
 
-        isMoving = true;
+        // We are moving. Might update for y
+        isMoving = true; 
+    }
+
+    /// <summary>
+    /// Decelerate the movement. Stops at 0
+    /// </summary>
+    /// <param name="direction">The opposite direction of the x velocity</param>
+    private void Decelerate(Vector2 direction)
+    {
+        if (Mathf.Abs(rb.velocity.x) > 0.01f) // If moving, slow us down to full stop by decelTime
+            rb.AddForce(new Vector2(moveDeceleration * direction.x, 0.0f), ForceMode2D.Force);
+        else // Stop us completely
+        {
+            rb.velocity = new Vector2(0, rb.velocity.y);
+            isMoving = false; // Update moving to false
+        }
+    }
+
+    /// <summary>
+    /// Flips the sprite based on movement direction
+    /// </summary>
+    private void FlipSprite()
+    {
+        // Flip the sprite based on the direction of movement
+        transform.localScale = new Vector2(Mathf.Sign(rb.velocity.x), transform.localScale.y);
     }
 
 
+    #region Input Callbacks
+
     public void Move(InputAction.CallbackContext move)
     {
+        // Might need more conditions.
         if (move.performed)
         {
             moveDir = move.ReadValue<Vector2>();
         }
-        else if (move.canceled)
+        else if (move.canceled) // Set moveDir to zero if no input
         {
             moveDir = Vector2.zero;
         }
@@ -88,13 +107,13 @@ public class PlayerMovement : MonoBehaviour
 
     public void Jump(InputAction.CallbackContext jump)
     {
-        Debug.Log("Called Jump");
         if (jump.performed)
         {
-            Debug.Log("Jump Performed");
+            // Debug.Log("Jump Performed");
             rb.AddForce(new(0, jumpForce), ForceMode2D.Impulse);
         }
     }
+
 
 
 
@@ -108,4 +127,7 @@ public class PlayerMovement : MonoBehaviour
         moveDeceleration = maxSpeed / decelTime;
     }
 #endif
+
+    #endregion
+
 }
