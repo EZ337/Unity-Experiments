@@ -14,11 +14,14 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Jump Settings")]
     [SerializeField] private float jumpForce = 10.0f;
+    [SerializeField] private float fallMult = 2.5f;
+    [SerializeField] private float lowJumpMult = 2.0f;
 
 
     private float moveAcceleration;
     private float moveDeceleration;
     private bool isMoving;
+
 
     private void Start()
     {
@@ -30,13 +33,13 @@ public class PlayerMovement : MonoBehaviour
     private void FixedUpdate()
     {
         // Process HorizontalMovement
-        HorizontalMovement();
+        Move();
     }
 
     /// <summary>
     /// Handles the horizontal movement of the player
     /// </summary>
-    private void HorizontalMovement()
+    private void Move()
     {
         if (moveDir.x != 0)
         {
@@ -92,7 +95,7 @@ public class PlayerMovement : MonoBehaviour
 
     #region Input Callbacks
 
-    public void Move(InputAction.CallbackContext move)
+    public void MoveAction(InputAction.CallbackContext move)
     {
         // Might need more conditions.
         if (move.performed)
@@ -105,13 +108,9 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    public void Jump(InputAction.CallbackContext jump)
+    public void JumpAction(InputAction.CallbackContext jump)
     {
-        if (jump.performed)
-        {
-            // Debug.Log("Jump Performed");
-            rb.AddForce(new(0, jumpForce), ForceMode2D.Impulse);
-        }
+        Debug.Log("Implement Jump Action");
     }
 
 

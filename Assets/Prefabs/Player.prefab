@@ -61,7 +61,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 3821763140556439487}
         m_TargetAssemblyTypeName: PlayerMovement, Assembly-CSharp
-        m_MethodName: Move
+        m_MethodName: MoveAction
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -77,7 +77,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 3821763140556439487}
         m_TargetAssemblyTypeName: PlayerMovement, Assembly-CSharp
-        m_MethodName: Jump
+        m_MethodName: JumpAction
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
