@@ -69,12 +69,12 @@ public class PlayerMovement : MonoBehaviour
             Accelerate(moveDir); // Accelerate in the input direction
             FlipSprite(); // Flip the sprite because we are moving
         }
-        else if (Mathf.Abs(rb.velocity.x) > 0.001f)
+        else if (Mathf.Abs(rb.velocity.x) > 0.01f || isMoving)
         {
             Decelerate(-(rb.velocity)); // No input so 
         }
 
-        animator.SetBool(animRun, isMoving);
+        
 
     }
 
@@ -94,7 +94,8 @@ public class PlayerMovement : MonoBehaviour
         }
 
         // We are moving. Might update for y
-        isMoving = true; 
+        isMoving = true;
+        animator.SetBool(animRun, isMoving);
     }
 
     /// <summary>
@@ -103,13 +104,18 @@ public class PlayerMovement : MonoBehaviour
     /// <param name="direction">The opposite direction of the x velocity</param>
     private void Decelerate(Vector2 direction)
     {
-        if (Mathf.Abs(rb.velocity.x) > 0.01f) // If moving, slow us down to full stop by decelTime
-            rb.AddForce(new Vector2(moveDeceleration * direction.x, 0.0f), ForceMode2D.Force);
-        else // Stop us completely
+        if (Mathf.Abs(rb.velocity.x) < 0.02)
         {
             rb.velocity = new Vector2(0, rb.velocity.y);
             isMoving = false; // Update moving to false
+            animator.SetBool(animRun, isMoving);
         }
+
+        else if (Mathf.Abs(rb.velocity.x) > 0.01f) // If moving, slow us down to full stop by decelTime
+        {
+            rb.AddForce(new Vector2(moveDeceleration * direction.x, 0.0f), ForceMode2D.Force);
+        }
+
     }
 
     /// <summary>
@@ -118,7 +124,8 @@ public class PlayerMovement : MonoBehaviour
     private void FlipSprite()
     {
         // Flip the sprite based on the direction of movement
-        transform.localScale = new Vector2(Mathf.Sign(rb.velocity.x), transform.localScale.y);
+        if (!Mathf.Approximately(rb.velocity.x, 0))
+            transform.localScale = new Vector2(Mathf.Sign(rb.velocity.x), transform.localScale.y);
     }
 
     private void Jump()
