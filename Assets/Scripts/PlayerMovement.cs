@@ -6,6 +6,7 @@ public class PlayerMovement : MonoBehaviour
     private Vector2 moveDir;
 
     [SerializeField] private Rigidbody2D rb;
+    [SerializeField] private Animator animator;
 
     [Header("Movement Settings")]
     [SerializeField] private float maxSpeed = 30.0f;
@@ -25,8 +26,15 @@ public class PlayerMovement : MonoBehaviour
     private float moveDeceleration;
     private bool isMoving;
     private bool isJumping;
+    private bool isFalling;
     private bool isGrounded;
     private float jumpDur;
+
+    // Animator Hashes
+    int animRun = Animator.StringToHash("isRunning");
+    int animJump = Animator.StringToHash("isJumping");
+    int animFall = Animator.StringToHash("isFalling");
+    int animLand = Animator.StringToHash("heavyLand");
 
 
     private void Start()
@@ -42,6 +50,7 @@ public class PlayerMovement : MonoBehaviour
         // Process HorizontalMovement
         Move();
         Fall();
+        IsGrounded();
         if (isJumping)
             Jump();
     }
@@ -60,6 +69,8 @@ public class PlayerMovement : MonoBehaviour
         {
             Decelerate(-(rb.velocity)); // No input so 
         }
+
+        animator.SetBool(animRun, isMoving);
 
     }
 
@@ -104,10 +115,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void Jump()
     {
-        if (jumpDur < 0 && rb.velocity.y > 0)
+        if (jumpDur < 0)
         {
-            // TODO Needs work
-            rb.velocity = new Vector2(rb.velocity.x, 0);
+            CancelJump();
         }
 
         // If we are in the air and we are still holding the jump
@@ -115,13 +125,30 @@ public class PlayerMovement : MonoBehaviour
         {
             //rb.AddForce(transform.up * jumpForce, ForceMode2D.Force);
             jumpDur -= Time.fixedDeltaTime;
+            isJumping = true;
         }
+    }
+
+    private void CancelJump()
+    {
+        if (rb.velocity.y > 0)
+        {
+            rb.velocity = new Vector2(rb.velocity.x, 0);
+        }
+
+        isJumping = false;
+        jumpDur = jumpTime;
+        animator.SetBool(animJump, isJumping);
     }
 
     private void Fall()
     {
         if (rb.velocity.y < 0.0f)
         {
+            isFalling = true;
+            animator.SetBool(animFall, isFalling);
+            
+
             Vector2 newVal = (Vector2) (fallMult * Physics2D.gravity.y * Time.fixedDeltaTime * transform.up) + rb.velocity;
             if (newVal.y > maxFallSpeed)
             {
@@ -134,6 +161,21 @@ public class PlayerMovement : MonoBehaviour
                 rb.velocity = newVal;
             }
         }
+        else if (isFalling && IsGrounded())
+        {
+            isFalling = false;
+
+            // Check if the player was falling with a high velocity
+            if (Mathf.Abs(rb.velocity.y) > maxFallSpeed - 5) // Use absolute value
+            {
+                // Play the heavy landing animation
+                animator.SetTrigger("HeavyLand");
+            }
+
+            animator.SetBool(animFall, isFalling);
+            // Reset jump duration
+            jumpDur = jumpTime;
+        }
     }
 
     private bool IsGrounded()
@@ -141,13 +183,16 @@ public class PlayerMovement : MonoBehaviour
         if (Physics2D.OverlapCircle(groundCheck.position, 0.3f, groundLayers))
         {
             jumpDur = jumpTime;
-            isJumping = false;
             isGrounded = true;
             return true;
         }
 
+        isGrounded = false;
         return false;
     }
+
+
+
 
 
     #region Input Callbacks
@@ -169,16 +214,15 @@ public class PlayerMovement : MonoBehaviour
     {
         if (IsGrounded() && jump.performed)
         {
-            rb.AddForce(transform.up * jumpForce, ForceMode2D.Impulse);
             isJumping = true;
+            rb.AddForce(transform.up * jumpForce, ForceMode2D.Impulse);
+            animator.SetBool(animJump, isJumping);
         }
 
-        else if (jump.canceled)
+        else if (jump.canceled && isJumping) // Check if isJumping is true before canceling
         {
-            isJumping = false;
-            rb.velocity = new Vector2(rb.velocity.x, 0);
+            CancelJump();
         }
-
     }
 
 
