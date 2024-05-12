@@ -69,7 +69,7 @@ public class PlayerMovement : MonoBehaviour
             Accelerate(moveDir); // Accelerate in the input direction
             FlipSprite(); // Flip the sprite because we are moving
         }
-        else if (Mathf.Abs(rb.velocity.x) > 0.0f)
+        else if (Mathf.Abs(rb.velocity.x) > 0.001f)
         {
             Decelerate(-(rb.velocity)); // No input so 
         }
@@ -85,9 +85,13 @@ public class PlayerMovement : MonoBehaviour
     private void Accelerate(Vector2 direction)
     {
         if (Mathf.Abs(rb.velocity.x) < maxSpeed) // Constantly add force if we haven't reached max speed
+        {
             rb.AddForce(new Vector2(direction.x * moveAcceleration, 0.0f), ForceMode2D.Force);
+        }
         else // If we are >= maxSpeed, clamp velocity to maxSpeed
+        {
             rb.velocity = new(maxSpeed * Mathf.Sign(direction.x), rb.velocity.y);
+        }
 
         // We are moving. Might update for y
         isMoving = true; 
@@ -125,7 +129,7 @@ public class PlayerMovement : MonoBehaviour
         }
 
         // If we are in the air and we are still holding the jump
-        else if (isJumping && jumpDur > 0.0f)
+        else if (isJumping && jumpDur > 0.001f)
         {
             //rb.AddForce(transform.up * jumpForce, ForceMode2D.Force);
             jumpDur -= Time.fixedDeltaTime;
@@ -153,7 +157,7 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void Fall()
     {
-        if (rb.velocity.y < 0.0f)
+        if (rb.velocity.y < -0.001f)
         {
             isFalling = true;
             animator.SetBool(animFall, isFalling);
