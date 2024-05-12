@@ -15,12 +15,18 @@ public class PlayerMovement : MonoBehaviour
     [Header("Jump Settings")]
     [SerializeField] private float jumpForce = 10.0f;
     [SerializeField] private float fallMult = 2.5f;
-    [SerializeField] private float lowJumpMult = 2.0f;
+    [SerializeField] private float jumpTime = 0.2f;
+    [SerializeField] private float maxFallSpeed = 50.0f;
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private LayerMask groundLayers;
 
 
     private float moveAcceleration;
     private float moveDeceleration;
     private bool isMoving;
+    private bool isJumping;
+    private bool isGrounded;
+    private float jumpDur;
 
 
     private void Start()
@@ -28,12 +34,16 @@ public class PlayerMovement : MonoBehaviour
         // Calculate time to reach and leave maxSpeed
         moveAcceleration = maxSpeed / accelTime;
         moveDeceleration = maxSpeed / decelTime;
+        jumpDur = jumpTime;
     }
 
     private void FixedUpdate()
     {
         // Process HorizontalMovement
         Move();
+        Fall();
+        if (isJumping)
+            Jump();
     }
 
     /// <summary>
@@ -92,6 +102,45 @@ public class PlayerMovement : MonoBehaviour
         transform.localScale = new Vector2(Mathf.Sign(rb.velocity.x), transform.localScale.y);
     }
 
+    private void Jump()
+    {
+        // If we are in the air and we are still holding the jump
+        if (isJumping && jumpDur > 0.0f)
+        {
+            //rb.AddForce(transform.up * jumpForce, ForceMode2D.Force);
+            jumpDur -= Time.fixedDeltaTime;
+        }
+        else
+        {
+            isJumping = false;
+            rb.velocity = new Vector2(rb.velocity.x, 0);
+            jumpDur = jumpTime;
+        }
+    }
+
+    private void Fall()
+    {
+        if (rb.velocity.y < 0.0f)
+        {
+            Vector2 newVal = (Vector2) (fallMult * Physics2D.gravity.y * Time.fixedDeltaTime * transform.up) + rb.velocity;
+            if (newVal.y > maxFallSpeed)
+            {
+                // Clamp fallSpeed
+                rb.velocity = new Vector2(rb.velocity.x, newVal.y);
+                Debug.Log("Max Fall Speed reached");
+            }
+            else
+            {
+                rb.velocity = newVal;
+            }
+        }
+    }
+
+    private void IsGrounded()
+    {
+        Physics2D.OverlapCircle(groundCheck.position, 0.3f);
+    }
+
 
     #region Input Callbacks
 
@@ -110,7 +159,16 @@ public class PlayerMovement : MonoBehaviour
 
     public void JumpAction(InputAction.CallbackContext jump)
     {
-        Debug.Log("Implement Jump Action");
+        if (jump.performed)
+        {
+            rb.AddForce(transform.up * jumpForce, ForceMode2D.Impulse);
+            isJumping = true;
+        }
+        else if (jump.canceled)
+        {
+            isJumping = false;
+            rb.velocity = new Vector2(rb.velocity.x, 0);
+        }
     }
 
 
