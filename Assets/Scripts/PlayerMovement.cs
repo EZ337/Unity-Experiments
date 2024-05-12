@@ -18,6 +18,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float fallMult = 2.5f;
     [SerializeField] private float jumpTime = 0.2f;
     [SerializeField] private float maxFallSpeed = 50.0f;
+    [SerializeField] private float heavyFallThreshold;
     [SerializeField] private Transform groundCheck;
     [SerializeField] private LayerMask groundLayers;
 
@@ -27,6 +28,7 @@ public class PlayerMovement : MonoBehaviour
     private bool isMoving;
     private bool isJumping;
     private bool isFalling;
+    private bool heavyLand;
     private bool isGrounded;
     private float jumpDur;
 
@@ -53,6 +55,8 @@ public class PlayerMovement : MonoBehaviour
         IsGrounded();
         if (isJumping)
             Jump();
+
+        Debug.Log(rb.velocity);
     }
 
     /// <summary>
@@ -129,6 +133,9 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Cancels the jump
+    /// </summary>
     private void CancelJump()
     {
         if (rb.velocity.y > 0)
@@ -141,6 +148,9 @@ public class PlayerMovement : MonoBehaviour
         animator.SetBool(animJump, isJumping);
     }
 
+    /// <summary>
+    /// Function to handle falling. MoveSpeed increases the longer you fall
+    /// </summary>
     private void Fall()
     {
         if (rb.velocity.y < 0.0f)
@@ -148,16 +158,22 @@ public class PlayerMovement : MonoBehaviour
             isFalling = true;
             animator.SetBool(animFall, isFalling);
             
-
+            // Increase fallSpeed the longer we fall
             Vector2 newVal = (Vector2) (fallMult * Physics2D.gravity.y * Time.fixedDeltaTime * transform.up) + rb.velocity;
-            if (newVal.y > maxFallSpeed)
+            if (newVal.y < maxFallSpeed)
             {
                 // Clamp fallSpeed
-                rb.velocity = new Vector2(rb.velocity.x, newVal.y);
+                rb.velocity = new Vector2(rb.velocity.x, maxFallSpeed);
                 Debug.Log("Max Fall Speed reached");
             }
             else
             {
+                // Sets heavyLand to true if we're falling at about 1/3 of of our maxFallSpeed
+                if (rb.velocity.y < heavyFallThreshold)
+                {
+                    heavyLand = true;
+                }
+
                 rb.velocity = newVal;
             }
         }
@@ -165,22 +181,28 @@ public class PlayerMovement : MonoBehaviour
         {
             isFalling = false;
 
-            // Check if the player was falling with a high velocity
-            if (Mathf.Abs(rb.velocity.y) > maxFallSpeed - 5) // Use absolute value
+            animator.SetBool(animFall, isFalling);
+            // Trigger heavyLand anim like HollowKnight
+            if (heavyLand)
             {
-                // Play the heavy landing animation
-                animator.SetTrigger("HeavyLand");
+                animator.SetTrigger(animLand);
+                // TODO: Disable movement for a few second
+                heavyLand = false;
             }
 
-            animator.SetBool(animFall, isFalling);
             // Reset jump duration
             jumpDur = jumpTime;
         }
     }
 
+    /// <summary>
+    /// Grounded check
+    /// </summary>
+    /// <returns>true if grounded. False otherwise</returns>
     private bool IsGrounded()
     {
-        if (Physics2D.OverlapCircle(groundCheck.position, 0.3f, groundLayers))
+        // Ground check
+        if (Physics2D.OverlapCapsule(groundCheck.position, new(1, 0.25f), CapsuleDirection2D.Horizontal, 0f, groundLayers))
         {
             jumpDur = jumpTime;
             isGrounded = true;
@@ -190,9 +212,6 @@ public class PlayerMovement : MonoBehaviour
         isGrounded = false;
         return false;
     }
-
-
-
 
 
     #region Input Callbacks
