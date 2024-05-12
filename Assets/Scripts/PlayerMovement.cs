@@ -104,17 +104,17 @@ public class PlayerMovement : MonoBehaviour
 
     private void Jump()
     {
+        if (jumpDur < 0 && rb.velocity.y > 0)
+        {
+            // TODO Needs work
+            rb.velocity = new Vector2(rb.velocity.x, 0);
+        }
+
         // If we are in the air and we are still holding the jump
-        if (isJumping && jumpDur > 0.0f)
+        else if (isJumping && jumpDur > 0.0f)
         {
             //rb.AddForce(transform.up * jumpForce, ForceMode2D.Force);
             jumpDur -= Time.fixedDeltaTime;
-        }
-        else
-        {
-            isJumping = false;
-            rb.velocity = new Vector2(rb.velocity.x, 0);
-            jumpDur = jumpTime;
         }
     }
 
@@ -136,9 +136,17 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    private void IsGrounded()
+    private bool IsGrounded()
     {
-        Physics2D.OverlapCircle(groundCheck.position, 0.3f);
+        if (Physics2D.OverlapCircle(groundCheck.position, 0.3f, groundLayers))
+        {
+            jumpDur = jumpTime;
+            isJumping = false;
+            isGrounded = true;
+            return true;
+        }
+
+        return false;
     }
 
 
@@ -159,16 +167,18 @@ public class PlayerMovement : MonoBehaviour
 
     public void JumpAction(InputAction.CallbackContext jump)
     {
-        if (jump.performed)
+        if (IsGrounded() && jump.performed)
         {
             rb.AddForce(transform.up * jumpForce, ForceMode2D.Impulse);
             isJumping = true;
         }
+
         else if (jump.canceled)
         {
             isJumping = false;
             rb.velocity = new Vector2(rb.velocity.x, 0);
         }
+
     }
 
 
