@@ -56,7 +56,7 @@ public class PlayerMovement : MonoBehaviour
         if (isJumping)
             Jump();
 
-        Debug.Log(rb.velocity);
+        //Debug.Log(rb.velocity);
     }
 
     /// <summary>
